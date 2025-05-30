@@ -178,6 +178,8 @@ public class ExecutionController {
 
     @Inject
     private Optional<OpenTelemetry> openTelemetry;
+    @Inject
+    private ExecutionStreamingService executionStreamingService;
 
     @ExecuteOn(TaskExecutors.IO)
     @Get(uri = "/search")
@@ -591,7 +593,25 @@ public class ExecutionController {
 
             executionQueue.emit(result);
             eventPublisher.publishEvent(new CrudEvent<>(result, CrudEventType.CREATE));
-            return HttpResponse.ok(result);
+
+            if (webhook.get().getWaitForExecution()) {
+                var subscriberId = UUID.randomUUID().toString();
+                var executionId = result.getId();
+                return Flux.<Event<Execution>>create(emitter -> {
+                        streamingService.registerSubscriber(
+                            executionId,
+                            subscriberId,
+                            emitter,
+                            flow
+                        );
+                    })
+                    .last()
+                    .map(event -> HttpResponse.ok(event.getData()))
+                    .doFinally(signalType -> streamingService.unregisterSubscriber(executionId, subscriberId))
+                    .block();
+            } else {
+                return HttpResponse.ok(result);
+            }
         } catch (QueueException e) {
             log.error(e.getMessage(), e);
             return HttpResponse.serverError();

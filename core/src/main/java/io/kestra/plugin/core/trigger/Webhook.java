@@ -62,7 +62,7 @@ import jakarta.validation.constraints.Size;
                   - id: log_hello_world
                     type: io.kestra.plugin.core.log.Log
                     message: Hello World! 🚀
-                
+
                 triggers:
                   - id: webhook
                     type: io.kestra.plugin.core.trigger.Webhook
@@ -82,7 +82,7 @@ import jakarta.validation.constraints.Size;
                   - id: log_hello_world
                     type: io.kestra.plugin.core.log.Log
                     message: Hello World! 🚀
-                
+
                 triggers:
                   - id: webhook
                     type: io.kestra.plugin.core.trigger.Webhook
@@ -110,6 +110,8 @@ public class Webhook extends AbstractTrigger implements TriggerOutput<Webhook.Ou
     )
     @PluginProperty(dynamic = true)
     private String key;
+
+    private Boolean waitForExecution = false;
 
     public Optional<Execution> evaluate(HttpRequest<String> request, io.kestra.core.models.flows.Flow flow) {
         String body = request.getBody().orElse(null);
