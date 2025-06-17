@@ -181,9 +181,6 @@ public final class RunVariables {
             // Flow
             if (flow != null) {
                 builder.put("flow", RunVariables.of(flow));
-                if (flow.getVariables() != null) {
-                    builder.put("vars", flow.getVariables());
-                }
             }
 
             // Task
@@ -304,10 +301,6 @@ public final class RunVariables {
                     builder.put("labels", Label.toNestedMap(execution.getLabels()));
                 }
 
-                if (execution.getVariables() != null) {
-                    builder.putAll(execution.getVariables());
-                }
-
                 if (flow == null) {
                     Flow flowFromExecution = Flow.builder()
                         .id(execution.getFlowId())
@@ -317,6 +310,15 @@ public final class RunVariables {
                         .build();
                     builder.put("flow", RunVariables.of(flowFromExecution));
                 }
+            }
+
+            // variables
+            if (execution != null &&  execution.getVariables() != null) {
+                builder.put("vars", execution.getVariables());
+            }
+            else if (execution == null && flow != null && flow.getVariables() != null) {
+                // flow variables are added to the execution variables at execution creation time so they must only be added if the execution is null
+                builder.put("vars", flow.getVariables());
             }
 
             // Kestra configuration
